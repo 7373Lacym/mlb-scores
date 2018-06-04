@@ -90,7 +90,7 @@ func main() {
 	dat, err := ioutil.ReadFile("./config")
 
 	configs := s.Split(string(dat), "\n")
-	configs = append(configs[:2], configs[2+1:]...)
+	configs = append(configs[:3], configs[3+1:]...)
 	for _, element := range configs {
 		envName := s.Split(element, "=")
 		os.Setenv(envName[0], envName[1])
