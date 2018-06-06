@@ -9,7 +9,6 @@ import "os"
 import "bytes"
 import (
 	"encoding/json"
-	"io"
 )
 
 type slackRequest struct {
@@ -86,13 +85,27 @@ type Scores struct {
 }
 
 func main() {
+	doPost()
+}
 
-	dat, err := ioutil.ReadFile("./config")
-
+func doPost() {
+	dat, err := ioutil.ReadFile("/app/config")
+	if(err != nil){
+		fmt.Println("could not read file")
+		return
+	}
 	configs := s.Split(string(dat), "\n")
-	configs = append(configs[:3], configs[3+1:]...)
+	fmt.Println(configs)
+	configs = append(configs[:2], configs[2+1:]...)
+
 	for _, element := range configs {
 		envName := s.Split(element, "=")
+		fmt.Println(len(envName))
+
+		if(len(envName) == 1){
+			continue
+		}
+
 		os.Setenv(envName[0], envName[1])
 	}
 
@@ -100,12 +113,12 @@ func main() {
 	password := os.Getenv("password")
 	slackUrl := os.Getenv("slackUrl")
 
+
 	currentTime := time.Now().Local().Format("20060102")
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://api.mysportsfeeds.com/v1.2/pull/mlb/2018-regular/scoreboard.json?fordate="+currentTime, nil)
 	req.SetBasicAuth(username, password)
 	resp, err := client.Do(req)
-
 	if err != nil {
 		fmt.Println("weep womp")
 	}
@@ -122,14 +135,14 @@ func main() {
 		gameSummary += element.Game.HomeTeam.Name + ": " + element.HomeScore + " vs " + element.Game.AwayTeam.Name + ": " + element.AwayScore + "\n"
 	}
 
-
 	scoresPost := slackRequest{Text: gameSummary}
 	fmt.Println(slackRequest(scoresPost))
 	b := new(bytes.Buffer)
-
 	json.NewEncoder(b).Encode(scoresPost)
 
-	resp1, _ := http.Post(slackUrl, "application/json; charset=utf-8", b)
-	io.Copy(os.Stdout, resp1.Body)
+	fmt.Println(slackUrl)
+	resp1, err:= http.Post(slackUrl, "application/json; charset=utf-8", b)
+	fmt.Println(err);
+	fmt.Println(resp1);
 
 }
