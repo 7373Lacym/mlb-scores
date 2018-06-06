@@ -9,6 +9,6 @@ COPY cron /var/spool/cron/crontabs/root
 
 RUN go build -o main .
 RUN chmod +x main
-run chmod +r config
+RUN chmod +r config.json
 
 CMD /usr/sbin/crond -l 2 -f

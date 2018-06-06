@@ -4,7 +4,6 @@ import "fmt"
 import "net/http"
 import "io/ioutil"
 import "time"
-import s "strings"
 import "os"
 import "bytes"
 import (
@@ -13,6 +12,12 @@ import (
 
 type slackRequest struct {
 	Text string `json:"text"`
+}
+
+type Configuration struct {
+	Username    string
+	Password 	string
+	SlackUrl 	string
 }
 
 type Game struct {
@@ -89,30 +94,18 @@ func main() {
 }
 
 func doPost() {
-	dat, err := ioutil.ReadFile("/app/config")
+
+	configuration, err := readConfig()
+
+
 	if(err != nil){
-		fmt.Println("could not read file")
-		return
-	}
-	configs := s.Split(string(dat), "\n")
-	fmt.Println(configs)
-	configs = append(configs[:2], configs[2+1:]...)
-
-	for _, element := range configs {
-		envName := s.Split(element, "=")
-		fmt.Println(len(envName))
-
-		if(len(envName) == 1){
-			continue
-		}
-
-		os.Setenv(envName[0], envName[1])
+		fmt.Println("weep womp")
 	}
 
-	username := os.Getenv("username")
-	password := os.Getenv("password")
-	slackUrl := os.Getenv("slackUrl")
 
+	username := configuration.Username
+	password := configuration.Password
+	slackUrl := configuration.SlackUrl
 
 	currentTime := time.Now().Local().Format("20060102")
 	client := &http.Client{}
@@ -141,8 +134,21 @@ func doPost() {
 	json.NewEncoder(b).Encode(scoresPost)
 
 	fmt.Println(slackUrl)
-	resp1, err:= http.Post(slackUrl, "application/json; charset=utf-8", b)
+	resp1, err := http.Post(slackUrl, "application/json; charset=utf-8", b)
 	fmt.Println(err);
 	fmt.Println(resp1);
+}
 
+
+func readConfig() (Configuration, error) {
+	file, _ := os.Open("config.json")
+	defer file.Close()
+	decoder := json.NewDecoder(file)
+	configuration := Configuration{}
+	err := decoder.Decode(&configuration)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	fmt.Println(configuration)
+	return configuration, err
 }
